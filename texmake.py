@@ -8,9 +8,11 @@ AUFGABEN_DEFINITION = r'\newcommand{\Exercise}[1]{{ \vspace*{0.5cm}' \
                       + "\n" r'\textsf{\textbf{Exercise #1}}' \
                       + "\n" + r'\vspace*{0.2cm}' + "\n\n" r'} }' + "\n"
 TEIL_DEFINITION = r'\newcommand{\Part}[1]{{ \vspace*{0.2cm}' \
-                      + "\n" r'\textsf{\textbf{(#1}}' \
-                      + "\n" + r'\vspace*{0.2cm}' + "\n\n" r'} }' + "\n"
+                  + "\n" r'\textsf{\textbf{(#1}}' \
+                  + "\n" + r'\vspace*{0.2cm}' + "\n\n" r'} }' + "\n"
 # ---------------------------------------------------------------------------------------------------------------------
+
+_BASE_DIR = dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def generate_config():
@@ -21,6 +23,7 @@ def generate_config():
     config["tutor"] = input("Name of the tutor: ")
     config["semester"] = input("Current Semester: ")
     config["folder_name"] = input("Name of the folder (without numbering, e.g. sheet, week...): ")
+    config["base_folder"] = input("The folder where the exercises should be created (. for this folder): ")
     num_student = int(input("Number of students working together: "))
     config["student_list"] = []
     for i in range(1, num_student + 1):
@@ -86,7 +89,7 @@ def create_base_file(num_exercises, num_sheet, skeleton_file_name="../skeleton.t
 
     # create stubs for exercise imports
     for i in range(1, num_exercises + 1):
-        out_string += "\n" + r'\Exercise %d' % i + "\n" + r'\import{%s/}{exercise_%d.tex}' % (exercise_subfolder, i)\
+        out_string += "\n" + r'\Exercise %d' % i + "\n" + r'\import{%s/}{exercise_%d.tex}' % (exercise_subfolder, i) \
                       + "\n"
 
     # doucment finished, write outstring to file
@@ -130,7 +133,9 @@ if __name__ == "__main__":
     num_sheet = int(input("Please input the number of the exercise sheet: "))
 
     with open("config.json", "r") as config_file:
-        sheet_folder = json.load(config_file)["folder_name"] + ("%02d" % num_sheet)
+        config = json.load(config_file)
+        sheet_folder = config["folder_name"] + ("%02d" % num_sheet)
+        os.chdir(config["base_folder"])
     if os.path.exists(sheet_folder):
         raise ValueError("There exists already a folder for this sheet: %s." % sheet_folder
                          + "Please delete it and restart the program.")
@@ -139,6 +144,6 @@ if __name__ == "__main__":
     os.chdir(sheet_folder)
 
     num_exercises = int(input("Please input the number of exercises on this sheet: "))
-    create_base_file(num_exercises, num_sheet)
+    create_base_file(num_exercises, num_sheet, skeleton_file_name=os.path.join(_BASE_DIR, "skeleton.tex"),
+                     config_file_name=os.path.join(_BASE_DIR, "config.json"))
     create_exercise_files(num_exercises)
-
