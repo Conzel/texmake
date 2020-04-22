@@ -118,6 +118,7 @@ def create_exercise_files(num_exercises, exercise_subfolder="exercises"):
 
 
 if __name__ == "__main__":
+    os.chdir(_BASE_DIR)
     print("Checking for Skeleton file...")
     if not os.path.exists("skeleton.tex"):
         print("No skeleton file has been detected. Please create a file named skeleton.tex,"
