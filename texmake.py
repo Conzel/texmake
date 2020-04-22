@@ -4,10 +4,10 @@ import os
 
 # ------------------------ data_section -------------------------------------------------------------------------------
 # contain tex data segments that need to be added in the header
-AUFGABEN_DEFINITION = r'\newcommand{\Aufgabe}[1]{{ \vspace*{0.5cm}' \
-                      + "\n" r'\textsf{\textbf{Aufgabe #1}}' \
+AUFGABEN_DEFINITION = r'\newcommand{\Exercise}[1]{{ \vspace*{0.5cm}' \
+                      + "\n" r'\textsf{\textbf{Exercise #1}}' \
                       + "\n" + r'\vspace*{0.2cm}' + "\n\n" r'} }' + "\n"
-TEIL_DEFINITION = r'\newcommand{\Teil}[1]{{ \vspace*{0.2cm}' \
+TEIL_DEFINITION = r'\newcommand{\Part}[1]{{ \vspace*{0.2cm}' \
                       + "\n" r'\textsf{\textbf{(#1}}' \
                       + "\n" + r'\vspace*{0.2cm}' + "\n\n" r'} }' + "\n"
 # ---------------------------------------------------------------------------------------------------------------------
@@ -17,14 +17,15 @@ def generate_config():
     """Interactively constructs json config from user input. """
     config = {}
     print("Enter the following values... ")
-    config["fach"] = input("Name der Veranstaltung: ")
-    config["betreuer"] = input("Name des Betreuers: ")
-    config["semester"] = input("Derzeitiges Semester: ")
-    num_student = int(input("Anzahl der abgebenden Studenten: "))
+    config["lecture"] = input("Name of the lecture: ")
+    config["tutor"] = input("Name of the tutor: ")
+    config["semester"] = input("Current Semester: ")
+    config["folder_name"] = input("Name of the folder (without numbering, e.g. sheet, week...): ")
+    num_student = int(input("Number of students working together: "))
     config["student_list"] = []
     for i in range(1, num_student + 1):
-        name = input("Namen von Student %d eingeben: " % i)
-        number = input("Matrikelnummer von Student %d eingeben: " % i)
+        name = input("Enter name of student %d: " % i)
+        number = input("Enter number of immatriculation of student %d: " % i)
         student = {"name": name, "number": number}
         config["student_list"].append(student)
     with open("config.json", "w+") as outfile:
@@ -57,35 +58,35 @@ def create_base_file(num_exercises, num_sheet, skeleton_file_name="../skeleton.t
         if r'\usepackage{fancyhdr}' not in skeleton_content:
             out_string += r'\usepackage{fancyhdr}' + "\n"
 
-    # gets json filed that was generated using generate_config
+    # gets json file that was generated using generate_config
     with open(config_file_name, "r") as config_file:
         config_dict = json.load(config_file)
 
     # constructs header from config_files, adds it to out_string
-    out_string += r'\lhead{\sf \large %s' % config_dict["fach"]
+    out_string += r'\lhead{\sf \large %s' % config_dict["lecture"]
     for student in config_dict["student_list"]:
         out_string += r'\\ \small %s - %s' % (student["name"], student["number"])
     out_string += "}\n"
-    out_string += r'\rhead{\sf %s \\ Betreuer: %s}' % (config_dict["semester"], config_dict["betreuer"]) + "\n"
+    out_string += r'\rhead{\sf %s \\ Tutor: %s}' % (config_dict["semester"], config_dict["tutor"]) + "\n"
     out_string += r'\pagestyle{fancy}' + "\n"
 
     # defines custom commands
     out_string += AUFGABEN_DEFINITION + TEIL_DEFINITION
 
     # sets author and title, uses first student listed as author
-    out_string += "\n" + r'\title{Übungsblatt %d}' % num_sheet \
+    out_string += "\n" + r'\title{Exercise Sheet %d}' % num_sheet \
                   + "\n" + r'\author{%s}' % config_dict["student_list"][0]["name"] + "\n"
 
     # bold title on the exercise sheet itself
     out_string += "\n" + r'\begin{document}' + "\n" \
                   + r'\vspace*{0.2cm}' + "\n" \
-                  + r'\begin{center}' + "\n" + r'\LARGE \sf Übungsblatt %d' % num_sheet + "\n" \
+                  + r'\begin{center}' + "\n" + r'\LARGE \sf Exercise Sheet %d' % num_sheet + "\n" \
                   + r'\end{center}' + "\n" \
                   + r'\vspace*{0.2cm}' + "\n"
 
     # create stubs for exercise imports
     for i in range(1, num_exercises + 1):
-        out_string += "\n" + r'\Aufgabe %d' % i + "\n" + r'\import{%s/}{exercise_%d.tex}' % (exercise_subfolder, i)\
+        out_string += "\n" + r'\Exercise %d' % i + "\n" + r'\import{%s/}{exercise_%d.tex}' % (exercise_subfolder, i)\
                       + "\n"
 
     # doucment finished, write outstring to file
@@ -109,7 +110,7 @@ def create_exercise_files(num_exercises, exercise_subfolder="exercises"):
     os.chdir(exercise_subfolder)
     for i in range(1, num_exercises + 1):
         with open("exercise_%d.tex" % i, "w+") as file:
-            file.write(r'\textbf{Diese Aufgabe wurde (noch) nicht bearbeitet.}')
+            file.write(r'\textbf{This exercise is still missing.}')
     os.chdir("..")
 
 
@@ -127,7 +128,9 @@ if __name__ == "__main__":
         exit()
 
     num_sheet = int(input("Please input the number of the exercise sheet: "))
-    sheet_folder = "sheet_%d" % num_sheet
+
+    with open("config.json", "r") as config_file:
+        sheet_folder = json.load(config_file)["folder_name"] + ("%02d" % num_sheet)
     if os.path.exists(sheet_folder):
         raise ValueError("There exists already a folder for this sheet: %s." % sheet_folder
                          + "Please delete it and restart the program.")
